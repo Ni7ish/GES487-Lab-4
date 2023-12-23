@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Lab 4 Dual Layer</title>
+
+         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+           integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+           crossorigin=""/>
+
+         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+           integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+           crossorigin=""></script>
+	
+	<style type="text/css">
+  html, body { margin: 15; padding: 0; height: 90%; }
+  #map { min-height: 85%; }
+</style>   
+		  
+		  <script type="text/javascript" src="chi_income.js"></script>
+		  <script type="text/javascript" src="chi_health.js"></script>
+		   
+ <style>
+          /* Optional: adjust the values below to change the appearance of the legend */
+          .legend {
+              padding: 6px 8px;
+              line-height: 18px;
+              background: rgba(255,255,255,0.9);
+              box-shadow: 0 0 15px rgba(0,0,0,0.2);
+              border-radius: 5px;
+          }
+
+           /* Optional: adjust the values below to change the appearance of the legend color boxes */
+           .legend i {
+              width: 18px;
+              height: 18px;
+              float: left;
+              margin-right: 8px;
+              opacity: 0.7;
+          }
+        </style>
+
+ </head>
+ 
+ <body>
+ 
+ <h1 style="font-family:verdana;">Income and Insurance Access in Chicago</h1>
+        <div id="map"></div>
+
+        <script type="text/javascript">
+
+          var map = L.map('map', {
+              center: [41.8569038,-87.8741052],
+              zoom: 10
+          });
+var canvas = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+	      attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ, TomTom, Intermap, iPC, USGS, FAO, NPS, NRCAN, GeoBase, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), and the GIS User Community'
+        }).addTo(map);
+				
+			var imagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+	attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+});	
+function getColor(value) {
+              return value > 132885 ? '#ffea46':
+                     value > 93000  ? '#beaf6f':
+                     value > 62625  ? '#7d7c78':
+                     value > 37917  ? '#414d6b':
+                                     '#00204d';
+          }
+		  function getColor1(value) {
+              return value > 99 ? '#fde725':
+					value > 95 ? '#7ad151':
+                     value > 85  ? '#23a884':
+                     value > 50  ? '#2a788e':
+                     value > 25  ? '#414387':
+                       '#440154';
+          }
+		  
+		  
+          function style(feature){
+            return {
+                fillColor: getColor(feature.properties.AMR8E001),   // AMR8E001 is the field name for the Income data
+                weight: 0.7,
+                opacity: 1,
+                color: 'gray',
+                fillOpacity: 0.4
+            };
+			
+        }
+		function style1(feature){
+            return {
+                fillColor: getColor1(feature.properties.perc_ins),   // perc_ins is the field name for the population density data
+                weight: 0.7,
+                opacity: 1,
+                color: 'pink',
+                fillOpacity: 0.4
+            };
+			
+        }
+			var overlayStyle = {
+  fillColor: 'brown',     // Fill color of polygons
+  color: 'black',       // Border color of polygons
+  weight: 1,            // Border thickness of polygons
+  opacity: 1,           // Opacity (0 to 1)
+  fillOpacity: 0.7      // Fill opacity (0 to 1)
+};
+		
+		
+		var health = L.geoJson(insur, {style:style1}).addTo(map);
+		
+			var income = L.geoJson(money, {style:style});
+		
+	
+		
+	
+		
+		var legend = L.control({position: 'bottomright'}); // Try the other three corners if you like.
+
+        legend.onAdd = function (map) {
+
+            var div = L.DomUtil.create('div', 'legend'),
+                grades = [0, 37917, 62625, 93000, 132885]; // The break values to define the intervals of population, note we begin from 0 here
+
+            div.innerHTML = '<b>Median Household Income <br> 2016-2020 <br></b>'; // The legend title (HTML-based)
+
+            // Loop through our the classes and generate a label with a color box for each interval.
+            // If you are creating a choropleth map, you DO NOT need to change lines below.
+            for (var i = 0; i < grades.length; i++) {
+                div.innerHTML +=
+                '<i style="background:' + getColor(grades[i] + 1) + '"></i>' +
+                grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+            }
+
+            return div;
+        };
+		
+		
+		
+		
+		var legend2 = L.control({position: 'bottomright'});
+
+        legend2.onAdd = function (map) {
+
+            var div = L.DomUtil.create('div', 'legend'),
+                grades = [0, 25, 50, 85, 95, 99]; // The break values to define the intervals of percentage, note we begin from 0 here
+
+            div.innerHTML = '<b>Percent Population Insured <br> 2020 <br></b>'; // The legend title (HTML-based)
+
+            // Loop through our the classes and generate a label with a color box for each interval.
+            // If you are creating a choropleth map, you DO NOT need to change lines below.
+            for (var i = 0; i < grades.length; i++) {
+                div.innerHTML +=
+                '<i style="background:' + getColor1(grades[i] + 1) + '"></i>' +
+                grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+            }
+
+            return div;
+        };
+		legend2.addTo(map);
+        
+var basemaps = {
+			"City Map": canvas,
+			"Satellite Map": imagery,
+			};
+
+        var overlaymaps = {
+            "Median Household Income": income, 
+			"Percent Insured": health,
+			
+			
+        };
+		health.addTo(map);
+		canvas.addTo(map);
+
+
+L.control.layers(basemaps, overlaymaps).addTo(map);
+
+ // Removing the legend when the layer is removed
+        map.on('overlayremove', function(eventLayer){
+          if (eventLayer.name == 'Median Household Income'){ // We use the key/display name to refer to the layer
+            map.removeControl(legend); // legend is the variable name of the layer legend
+          }
+        });
+
+        // Adding the legend when the layer is added
+        map.on('overlayadd', function(eventLayer){
+          if (eventLayer.name == 'Median Household Income')
+		     legend.addTo(map);
+        });
+		
+		// Removing the legend when the layer is removed
+        map.on('overlayremove', function(eventLayer){
+          if (eventLayer.name == 'Percent Insured'){ // We use the key/display name to refer to the layer
+            map.removeControl(legend2); // legend is the variable name of the layer legend
+          }
+        });
+
+        // Adding the legend when the layer is added
+        map.on('overlayadd', function(eventLayer){
+          if (eventLayer.name == 'Percent Insured')
+		     legend2.addTo(map);
+        });
+
+
+        </script>
+   </body>
+</html>
